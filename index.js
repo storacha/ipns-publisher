@@ -14,7 +14,7 @@ async function main () {
     console.log('Enable logging by setting DEBUG=ipns-pub')
   }
 
-  const endpoint = process.env.ENDPOINT || 'wss://api-staging.web3.storage'
+  const endpoint = process.env.ENDPOINT || 'wss://api.web3.storage'
   const url = new URL('name/*/watch', endpoint)
 
   while (true) {
@@ -35,7 +35,7 @@ async function main () {
           const { key, value, record: b64Record } = JSON.parse(msg.utf8Data)
           log(`🆕 ${key} => ${value}`)
           const record = uint8ArrayFromString(b64Record, 'base64pad')
-          for await (const qe of ipfs.dht.put(key, record)) {
+          for await (const qe of ipfs.dht.put(`/ipns/${key}`, record)) {
             log(`📞 ${key} ${JSON.stringify(qe)}`)
           }
         })
