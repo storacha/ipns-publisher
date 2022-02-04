@@ -3,8 +3,13 @@ import dotenv from 'dotenv'
 import debug from 'debug'
 import { create as createIpfs } from 'ipfs-http-client'
 import * as uint8arrays from 'uint8arrays'
+import PQueue from 'p-queue'
+import formatNumber from 'format-number'
 
 dotenv.config()
+
+const CONCURRENCY = 5
+const fmt = formatNumber()
 
 const WebSocket = websocket.client
 const log = debug('ipns-pub')
@@ -15,6 +20,12 @@ async function main () {
   log('ℹ️ Enable verbose logging with DEBUG=ipns-pub-debug*')
   const endpoint = process.env.ENDPOINT || 'wss://api.web3.storage'
   const url = new URL('name/*/watch', endpoint)
+
+  /** @type {Map<string, { record: string }>} */
+  const taskData = new Map()
+  /** @type {Set<string>} */
+  const runningTasks = new Set()
+  const queue = new PQueue({ concurrency: CONCURRENCY })
 
   while (true) {
     const ipfs = createIpfs()
@@ -34,13 +45,54 @@ async function main () {
           const { key, value, record: b64Record } = JSON.parse(msg.utf8Data)
           const keyLog = log.extend(shorten(key))
           keyLog.enabled = true
-          keyLog(`🆕 ${key} => ${value}`)
-          const start = Date.now()
-          const record = uint8arrays.fromString(b64Record, 'base64pad')
-          for await (const e of ipfs.dht.put(`/ipns/${key}`, record)) {
-            logQueryEvent(log.debug.extend(shorten(key)), e)
+          keyLog(`🆕 /ipns/${key} ➡️ ${value}`)
+
+          let data = taskData.get(key)
+          if (data) {
+            Object.assign(data, { value, record: b64Record })
+            return keyLog('👌 Already in the queue (record to publish has been updated)')
           }
-          keyLog(`⏱ Updated in ${Date.now() - start}ms`)
+
+          data = { value, record: b64Record }
+          taskData.set(key, data)
+
+          const start = Date.now()
+          keyLog(`➕ Adding to the queue, position: ${fmt(queue.size)}`)
+          queue.add(async function run () {
+            // if this task is already running, lets not concurrently put
+            // multiple versions for the same key!
+            if (runningTasks.has(key)) {
+              keyLog('🏃 Already running! Re-queue in 60s...')
+              await sleep(60_000)
+              if (taskData.has(key) && taskData.get(key) !== data) {
+                return keyLog('⏩ Skipping re-queue, a newer update has been queued already.')
+              }
+              taskData.set(key, data)
+              keyLog(`➕ Re-adding to the queue, position: ${fmt(queue.size)}`)
+              queue.add(run)
+              return
+            }
+            keyLog(`🏁 Starting publish (was queued for ${fmt(Date.now() - start)}ms)`)
+            runningTasks.add(key)
+
+            try {
+              const data = taskData.get(key)
+              if (!data) throw new Error('missing task data')
+              taskData.delete(key)
+
+              keyLog(`📣 Publishing /ipns/${key} ➡️ ${data.value}`)
+              const record = uint8arrays.fromString(data.record, 'base64pad')
+
+              for await (const e of ipfs.dht.put(`/ipns/${key}`, record)) {
+                logQueryEvent(log.debug.extend(shorten(key)), e)
+              }
+              keyLog(`✅ Published in ${fmt(Date.now() - start)}ms`)
+            } catch (err) {
+              keyLog(`⚠️ Failed to put to DHT (took ${fmt(Date.now() - start)}ms)`, err)
+            } finally {
+              runningTasks.delete(key)
+            }
+          })
         })
 
         conn.on('error', err => reject(err))
@@ -54,10 +106,11 @@ async function main () {
     }
 
     log('💤 Sleeping before retry')
-    await new Promise(resolve => setTimeout(resolve, 60_000))
+    await sleep(60_000)
   }
 }
 
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 const shorten = str => `${str.slice(0, 6)}..${str.slice(-6)}`
 
 /**
