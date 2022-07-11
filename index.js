@@ -1,3 +1,4 @@
+/* global AbortController */
 import websocket from 'websocket'
 import dotenv from 'dotenv'
 import debug from 'debug'
@@ -9,6 +10,7 @@ import formatNumber from 'format-number'
 dotenv.config()
 
 const CONCURRENCY = 5
+const DHT_PUT_TIMEOUT = 60_000
 const fmt = formatNumber()
 
 const WebSocket = websocket.client
@@ -75,6 +77,7 @@ async function main () {
             keyLog(`🏁 Starting publish (was queued for ${fmt(Date.now() - start)}ms)`)
             runningTasks.add(key)
 
+            let timeoutId
             try {
               const data = taskData.get(key)
               if (!data) throw new Error('missing task data')
@@ -83,13 +86,17 @@ async function main () {
               keyLog(`📣 Publishing /ipns/${key} ➡️ ${data.value}`)
               const record = uint8arrays.fromString(data.record, 'base64pad')
 
-              for await (const e of ipfs.dht.put(`/ipns/${key}`, record)) {
+              const controller = new AbortController()
+              timeoutId = setTimeout(() => controller.abort(), DHT_PUT_TIMEOUT)
+
+              for await (const e of ipfs.dht.put(`/ipns/${key}`, record, { signal: controller.signal })) {
                 logQueryEvent(log.debug.extend(shorten(key)), e)
               }
               keyLog(`✅ Published in ${fmt(Date.now() - start)}ms`)
             } catch (err) {
               keyLog(`⚠️ Failed to put to DHT (took ${fmt(Date.now() - start)}ms)`, err)
             } finally {
+              clearTimeout(timeoutId)
               runningTasks.delete(key)
             }
           })
