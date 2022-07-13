@@ -85,7 +85,7 @@ async function main () {
               const data = taskData.get(key)
               if (!data) throw new Error('missing task data')
               taskData.delete(key)
-              publishRecord(ipfs, key, data.record, data.value)
+              publishRecord(ipfs, key, data.value, data.record)
             } finally {
               runningTasks.delete(key)
             }

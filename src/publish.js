@@ -15,18 +15,18 @@ log.debug = debug('ipns-pub-debug')
  * Publish the given base64-encoded IPNS record for the given public key to the DHT.
  * @param {object} ipfs IPFS client.
  * @param {string} key Public key of the record.
- * @param {string} record Base 64 encoded serialized IPNS record.
- * @param {string} value Some differently encoded version of the record. TODO: clarify.
+ * @param {string} value The `value` field of the record.
+ * @param {string} b64record Base 64 encoded serialized IPNS record.
  * @returns {undefined}
  */
-export async function publishRecord (ipfs, key, record, value) {
+export async function publishRecord(ipfs, key, value, b64record) {
   const keyLog = log.extend(shorten(key))
   const start = Date.now()
   let timeoutId
   try {
     keyLog(`📣 Publishing /ipns/${key} ➡️ ${value}`)
     keyLog.enabled = true
-    const recordUint8 = uint8arrays.fromString(record, 'base64pad')
+    const recordUint8 = uint8arrays.fromString(b64record, 'base64pad')
 
     const controller = new AbortController()
     timeoutId = setTimeout(() => controller.abort(), DHT_PUT_TIMEOUT)
