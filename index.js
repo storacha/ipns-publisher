@@ -3,14 +3,14 @@ import websocket from 'websocket'
 import dotenv from 'dotenv'
 import debug from 'debug'
 import { create as createIpfs } from 'ipfs-http-client'
-import * as uint8arrays from 'uint8arrays'
 import PQueue from 'p-queue'
 import formatNumber from 'format-number'
+import { publishRecord } from './publish.js'
+import { shorten } from './utils/string.js'
 
 dotenv.config()
 
 const CONCURRENCY = 5
-const DHT_PUT_TIMEOUT = 60_000
 const fmt = formatNumber()
 
 const WebSocket = websocket.client
@@ -18,6 +18,10 @@ const log = debug('ipns-pub')
 log.enabled = true
 log.debug = debug('ipns-pub-debug')
 
+/**
+ * Listen to the websocket on the w3name service to receive updates to IPNS name records
+ * and publish those updates to the DHT.
+ */
 async function main () {
   log('ℹ️ Enable verbose logging with DEBUG=ipns-pub-debug*')
   const endpoint = process.env.ENDPOINT || 'wss://api.web3.storage'
@@ -77,26 +81,12 @@ async function main () {
             keyLog(`🏁 Starting publish (was queued for ${fmt(Date.now() - start)}ms)`)
             runningTasks.add(key)
 
-            let timeoutId
             try {
               const data = taskData.get(key)
               if (!data) throw new Error('missing task data')
               taskData.delete(key)
-
-              keyLog(`📣 Publishing /ipns/${key} ➡️ ${data.value}`)
-              const record = uint8arrays.fromString(data.record, 'base64pad')
-
-              const controller = new AbortController()
-              timeoutId = setTimeout(() => controller.abort(), DHT_PUT_TIMEOUT)
-
-              for await (const e of ipfs.dht.put(`/ipns/${key}`, record, { signal: controller.signal })) {
-                logQueryEvent(log.debug.extend(shorten(key)), e)
-              }
-              keyLog(`✅ Published in ${fmt(Date.now() - start)}ms`)
-            } catch (err) {
-              keyLog(`⚠️ Failed to put to DHT (took ${fmt(Date.now() - start)}ms)`, err)
+              publishRecord(ipfs, key, data.record, data.value)
             } finally {
-              clearTimeout(timeoutId)
               runningTasks.delete(key)
             }
           })
@@ -118,29 +108,5 @@ async function main () {
 }
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
-const shorten = str => `${str.slice(0, 6)}..${str.slice(-6)}`
-
-/**
- * @param {debug.Debugger} log
- * @param {import('ipfs-core-types/src/dht').QueryEvent} e
- */
-function logQueryEvent (log, e) {
-  switch (e.name) {
-    case 'VALUE':
-      log(`Type: ${e.name} From: ${e.from} Value: ${uint8arrays.toString(e.value, 'base64pad')}`)
-      break
-    case 'SENDING_QUERY':
-      log(`Type: ${e.name} To: ${e.to}`)
-      break
-    case 'PEER_RESPONSE':
-      log(`Type: ${e.name} From: ${e.from} Message: ${e.messageName} Closer: ${e.closer.length} Providers: ${e.providers.length}`)
-      break
-    case 'DIALING_PEER':
-      log(`Type: ${e.name} Peer: ${e.peer}`)
-      break
-    default:
-      log(`Type: ${e.name}`)
-  }
-}
 
 main()
