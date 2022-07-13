@@ -3,13 +3,13 @@
   "version": "0.0.0",
   "description": "IPNS publisher for w3name.",
   "private": true,
-  "main": "index.js",
+  "main": "src/index.js",
   "type": "module",
   "scripts": {
     "start": "run-p start:*",
     "start:ipfs": "ipfs daemon --init --init-profile=server",
-    "start:publisher": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:publisher": "node src/index.js",
+    "test": "mocha --experimental-vm-modules --timeout 5000",
     "lint": "standard"
   },
   "keywords": [
@@ -33,6 +33,7 @@
     "websocket": "^1.0.34"
   },
   "devDependencies": {
+    "mocha": "^9.2.0",
     "standard": "^16.0.4"
   }
 }
