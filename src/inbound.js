@@ -18,7 +18,7 @@ import { publishRecord } from './publish.js'
  *  - `record` - base64-encoded record to be published.
  * @returns {Promise<JSONResponse>}
  */
-async function broadcast (request, response) {
+export async function broadcast (request, response) {
   const body = (await getBody(request)) || '{}'  // Avoid JSON parse error if empty
   const payload = JSON.parse(body);
   for (const name of ['key', 'record']) {
