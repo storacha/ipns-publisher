@@ -7,7 +7,6 @@ import { keys } from 'libp2p-crypto'
 import * as Digest from 'multiformats/hashes/digest'
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 import { getValueFromDHT, parseAndValidateCID } from './utils/ipfs.js'
-import { canOverwrite } from './utils/ipns.js'
 import { writeJSON404, writeJSON500, writeJSONResponse } from './utils/http/responses.js'
 import { getBody } from './utils/http/requests.js'
 import { publishRecord } from './publish.js'
@@ -55,19 +54,10 @@ async function broadcast (request, response) {
     return
   }
 
-  // Fetch the existing record from the DHT to check that the one we're trying to
-  // publish is newer.
-  const existingRecordB64 = getValueFromDHT(`/ipns/${key}`)
-  if (existingRecordB64) {
-    const existingRecord = ipns.unmarshal(existingRecordB64)
-    if (!canOverwrite(existingRecord, entry)) {
-      writeJSONResponse(
-        response,
-        { message: 'supplied record is older or has lower sequence number than existing record'},
-        400
-        )
-      }
-    }
+  // TODO: Fetch the existing record from the DHT to check that the one we're trying to
+  // publish is newer.  This isn't a massive problem, as we've checked the signature, so
+  // someone can only overwrite their own records, and the DHT garbage collection will
+  // sort them out eventually anyway, but it might be a nice thing to add.
 
   const ipfs = createIpfs()
   publishRecord(ipfs, key, entry.value, record)
