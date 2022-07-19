@@ -1,39 +1,33 @@
 /* eslint-env serviceworker */
 
-export class JSONResponse extends Response {
-  /**
-   * @param {any} body
-   * @param {ResponseInit} [init]
-   */
-  constructor(body, init = {}) {
-    init.headers = init.headers || {}
-    init.headers['Content-Type'] = 'application/json;charset=UTF-8'
-    super(JSON.stringify(body), init)
-  }
-}
-
-export function JSON404(message = 'Not Found') {
-  return new JSONResponse({ message }, { status: 404 })
+/**
+ * @param {import('http').ServerResponse} response
+ * @param {object} data
+ * @param {number} status
+ */
+export function writeJSONResponse (response, data, status = 200) {
+  response.writeHead(status, { 'Content-Type': 'application/json;charset=UTF-8' })
+  response.end(JSON.stringify(data))
 }
 
 /**
- * Return a JSON-type HTTP response with info about the given error.
- * @param {Error & {status?: number;code?: string;reason?: string; details?: string; }} err
- * @param {import('./env').Env} env
- * @returns {JSONResponse}
+ * @param {import('http').ServerResponse} response
+ * @param {string} message
  */
-export function JSON500(err, { log }) {
+export function writeJSON404(response, message = 'Not Found') {
+  writeJSONResponse(response, { message }, 404)
+}
+
+/**
+ * Write a JSON payload to the given response with info about the given error.
+ * @param {import('http').ServerResponse} response
+ * @param {Error} err
+ */
+export function writeJSON500(response, err) {
   console.error(err.stack)
-
-  let status = err.status || 500
-  if (status >= 500) {
-    log.error(err)
-  }
-
   let error = {
     code: err.code,
     message: err.message
   }
-
-  return new JSONResponse(error, { status })
+  writeJSONResponse(response, error, 500)
 }
