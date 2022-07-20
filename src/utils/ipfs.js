@@ -23,7 +23,7 @@ export async function getValueFromDHT (key) {
 /**
  * @param {CID} cid
  */
-function validateCIDKeyCode(cid) {
+function validateCIDKeyCode (cid) {
   if (cid.code !== libp2pKeyCode) {
     throw new Error(`invalid key, expected: ${libp2pKeyCode} codec code but got: ${cid.code}`)
   }
@@ -32,7 +32,7 @@ function validateCIDKeyCode(cid) {
 /**
  * @param {string} cid
  */
-export function parseAndValidateCID(key) {
+export function parseAndValidateCID (key) {
   let cid
   try {
     cid = CID.parse(key, base36)

@@ -1,15 +1,14 @@
 /* global process */
 import http from 'http'
-import { create as createIpfs } from 'ipfs-http-client'
 import * as ipns from 'ipns'
 import { validate as ipnsValidate } from 'ipns/validator'
 import { keys } from 'libp2p-crypto'
 import * as Digest from 'multiformats/hashes/digest'
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
-import { getValueFromDHT, parseAndValidateCID } from './utils/ipfs.js'
+import { parseAndValidateCID } from './utils/ipfs.js'
 import { writeJSON404, writeJSON500, writeJSONResponse } from './utils/http/responses.js'
 import { getBody } from './utils/http/requests.js'
-import { publishRecord } from './publish.js'
+import { addToQueue } from './publish.js'
 
 /**
  * Receive a POST request containing an IPNS record and publish it to the DHT.
@@ -19,8 +18,8 @@ import { publishRecord } from './publish.js'
  * @returns {Promise<JSONResponse>}
  */
 export async function broadcast (request, response) {
-  const body = (await getBody(request)) || '{}'  // Avoid JSON parse error if empty
-  const payload = JSON.parse(body);
+  const body = (await getBody(request)) || '{}' // Avoid JSON parse error if empty
+  const payload = JSON.parse(body)
   for (const name of ['key', 'record']) {
     if (payload[name] === undefined) {
       writeJSONResponse(response, { message: `JSON payload missing key '${name}'` }, 400)
@@ -59,8 +58,7 @@ export async function broadcast (request, response) {
   // someone can only overwrite their own records, and the DHT garbage collection will
   // sort them out eventually anyway, but it might be a nice thing to add.
 
-  const ipfs = createIpfs()
-  publishRecord(ipfs, key, entry.value, record)
+  addToQueue(key, entry.value, record)
   writeJSONResponse(response, { message: 'Success' })
 }
 
@@ -76,7 +74,7 @@ function siteRoot (request, response) {
     <h1>⁂</h1>
     <p>IPNS records can be published to the /broadcast endpoint.</p>
     </body>`
-    )
+  )
 }
 
 const host = process.env.INBOUND_HOSTNAME || '127.0.0.1'
@@ -89,9 +87,9 @@ const routes = {
 /**
  * HTTP server entrypoint. This may be changed depending on how/where we run this.
  */
-async function router(request, response) {
+async function router (request, response) {
   try {
-    let handler = routes[request.url]
+    const handler = routes[request.url]
     if (handler === undefined) {
       writeJSON404(response)
       return
@@ -106,7 +104,7 @@ async function router(request, response) {
   console.log(`[${response.statusCode}] ${request.url}`)
 }
 
-const server = http.createServer(router);
+const server = http.createServer(router)
 server.listen(port, host, () => {
-  console.log(`Inbound server is running on http://${host}:${port}`);
-});
+  console.log(`Inbound server is running on http://${host}:${port}`)
+})

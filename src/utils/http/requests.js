@@ -5,13 +5,13 @@
  */
 export function getBody (request) {
   const promise = new Promise((resolve, reject) => {
-    let body = [];
+    let body = []
     request.on('data', (chunk) => {
-      body.push(chunk);
+      body.push(chunk)
     }).on('end', () => {
-      body = Buffer.concat(body).toString();
+      body = Buffer.concat(body).toString()
       resolve(body)
-    });
-  });
+    })
+  })
   return promise
 }
