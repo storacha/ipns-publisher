@@ -8,7 +8,8 @@ import { create as createIpfs } from 'ipfs-http-client'
 
 export const ipfs = createIpfs()
 
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+export const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+export const sleepTimer = 60_000
 
 const CONCURRENCY = 5
 const DHT_PUT_TIMEOUT = 60_000
@@ -22,7 +23,7 @@ log.debug = debug('ipns-pub-debug')
 const taskData = new Map()
 /** @type {Set<string>} */
 const runningTasks = new Set()
-const queue = new PQueue({ concurrency: CONCURRENCY })
+export const queue = new PQueue({ concurrency: CONCURRENCY })
 
 /**
  * Queues the IPNS record to be added to the DHT.
@@ -51,7 +52,7 @@ export async function addToQueue (key, value, b64record) {
     // multiple versions for the same key!
     if (runningTasks.has(key)) {
       keyLog('🏃 Already running! Re-queue in 60s...')
-      await sleep(60_000)
+      await sleep(sleepTimer)
       if (taskData.has(key) && taskData.get(key) !== data) {
         return keyLog('⏩ Skipping re-queue, a newer update has been queued already.')
       }
@@ -70,7 +71,7 @@ export async function addToQueue (key, value, b64record) {
       const data = taskData.get(key)
       if (!data) throw new Error('missing task data')
       taskData.delete(key)
-      publishRecord(key, data.value, data.record)
+      publishRecord(key, data.value, data.b64record)
     } finally {
       runningTasks.delete(key)
     }
