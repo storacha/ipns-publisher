@@ -6,7 +6,7 @@ import PQueue from 'p-queue'
 import { shorten } from './utils/string.js'
 import { create as createIpfs } from 'ipfs-http-client'
 
-const ipfs = createIpfs()
+export const ipfs = createIpfs()
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 
