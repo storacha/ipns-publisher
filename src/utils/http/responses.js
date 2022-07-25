@@ -14,7 +14,7 @@ export function writeJSONResponse (response, data, status = 200) {
  * @param {import('http').ServerResponse} response
  * @param {string} message
  */
-export function writeJSON404(response, message = 'Not Found') {
+export function writeJSON404 (response, message = 'Not Found') {
   writeJSONResponse(response, { message }, 404)
 }
 
@@ -23,9 +23,9 @@ export function writeJSON404(response, message = 'Not Found') {
  * @param {import('http').ServerResponse} response
  * @param {Error} err
  */
-export function writeJSON500(response, err) {
+export function writeJSON500 (response, err) {
   console.error(err.stack)
-  let error = {
+  const error = {
     code: err.code,
     message: err.message
   }

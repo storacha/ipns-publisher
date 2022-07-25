@@ -45,3 +45,35 @@ export class MockRecord {
     return this.b64
   }
 }
+
+export class MockRequest {
+  constructor () {
+    this.eventListeners = {}
+  }
+
+  on (type, func) {
+    this.eventListeners[type] = func
+    return this
+  }
+
+  write (data) {
+    const bufferData = Buffer.from(data, 'utf-8')
+    this.send('data', bufferData)
+  }
+
+  end () {
+    this.send('end')
+  }
+
+  send (type, data) {
+    const func = this.eventListeners[type]
+    if (func) {
+      func(data)
+    }
+  }
+}
+
+export const mockValidBroadcastBody = {
+  key: 'k51qzi5uqu5dlfex6kv30396ro1rnuf59dg88ym99xu0ununvne4nefp9qoaft',
+  record: 'CkEvaXBmcy9iYWZrcmVpZW00dHdrcXpzcTJhajRzaGJ5Y2Q0eXZvajJjeDcydmV6aWNsZXRsaGk3ZGlqamNpcXB1aRJAbvuKSknL9CFoJgSC0Eenysa/fM+81YZ3GpesX3pR1ftnMm4RgQNviQa+ZFT14Um0QNDWyN9GZphrRguu5qH4AhgAIh4yMDIzLTA3LTI1VDEzOjUwOjIxLjM3NjAwMDAwMFooADDA5YG+64XNBUJApqNpcXPY9JjgQ+1o25B6fMkxbj684ibl8Ko6JY9vdzImw+Dxu0r256i4u6k8GtSZerUc2yuCIke1xWcRQtM9CkqYAaVjVFRMGwALNC63wHLAZVZhbHVlWEEvaXBmcy9iYWZrcmVpZW00dHdrcXpzcTJhajRzaGJ5Y2Q0eXZvajJjeDcydmV6aWNsZXRsaGk3ZGlqamNpcXB1aWhTZXF1ZW5jZQBoVmFsaWRpdHlYHjIwMjMtMDctMjVUMTM6NTA6MjEuMzc2MDAwMDAwWmxWYWxpZGl0eVR5cGUA'
+}

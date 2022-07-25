@@ -1,36 +1,34 @@
 /* eslint-env mocha */
 import assert from 'assert'
-import http from 'http'
+import sinon from 'sinon'
 import { broadcast } from '../src/inbound.js'
+import { queue } from '../src/publish.js'
+import { mockValidBroadcastBody, MockRequest } from './scripts/mocks.js'
 
 describe('/broadcast endpoint', () => {
   it('should enforce required keys in JSON payload', async () => {
-    const options = {
-      host: '127.0.0.1',
-      port: 80,
-      method: 'POST',
-      path: '/broadcast'
-    };
-    const response = await getResponse(broadcast, options, {})
-    assert.equal(response.statusCode, 400)
+    const request = new MockRequest()
+    const responsePromise = broadcast(request)
+    request.write(JSON.stringify({}))
+    request.end()
+
+    const response = await responsePromise
+    assert.equal(response.status, 400)
+    assert.equal(response.json.message, 'JSON payload missing key \'key\'')
+  })
+
+  it('should add the record to the queue', async () => {
+    const queueSpy = sinon.stub(queue, 'add').callsFake(() => {})
+
+    const request = new MockRequest()
+    const responsePromise = broadcast(request)
+    request.write(JSON.stringify(mockValidBroadcastBody))
+    request.end()
+    const response = await responsePromise
+
+    assert.equal(response.status, 200)
+    assert.equal(response.json.message, 'Record added to queue for publishing.')
+    assert(queueSpy.calledOnce, 'Record is added to the queue.')
+    queueSpy.restore()
   })
 })
-
-function getResponse(handler, requestOptions, jsonData) {
-  return new Promise(async function (resolve, reject) {
-    const options = {
-      host: '127.0.0.1',
-      port: 80,
-      method: 'POST',
-      path: '/broadcast',
-      ...requestOptions
-    };
-    const request = http.ClientRequest()
-    if (jsonData) {
-      // TODO: add JSON.stringify(jsonData) to request body
-    }
-    const response = http.ServerResponse()
-    await handler(request, response)
-    return response
-  })
-}

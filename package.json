@@ -9,7 +9,7 @@
     "start": "run-p start:*",
     "start:ipfs": "ipfs daemon --init --init-profile=server",
     "start:publisher": "node src/index.js",
-    "start:inbound": "node src/inbound.js",
+    "start:inbound": "node src/server.js",
     "test": "mocha --experimental-vm-modules --timeout 5000",
     "lint": "standard"
   },
