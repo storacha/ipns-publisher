@@ -1,7 +1,7 @@
 import * as uint8arrays from 'uint8arrays'
 
 class DHT {
-  put(keyPath, record, value, options) {
+  put (keyPath, record, value, options) {
     // Return some kind of array, which is what's expected
     return record.map(int => String(int))
   }

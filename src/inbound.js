@@ -8,11 +8,20 @@ import { getBody } from './utils/http/requests.js'
 import { addToQueue } from './publish.js'
 
 /**
- * Receive a POST request containing an IPNS record and publish it to the DHT.
+ * A number, or a string containing a number.
+ * @typedef {object} InboundEndpointResponse
+ * @property {number} status
+ * @property {object|undefined} json
+ * @property {string|undefined} html
+ */
+
+/**
+ * Receive a POST request containing an IPNS record and key to be queued to be added to the DHT
  * Expects a JSON payload containing:
  *  - `key` - key of the record to be published.
  *  - `record` - base64-encoded record to be published.
- * @returns {Promise<JSONResponse>}
+ * @param {import('http').ClientRequest} request
+ * @returns {Promise<InboundEndpointResponse>}
  */
 export async function broadcast (request) {
   const body = (await getBody(request)) || '{}' // Avoid JSON parse error if empty
@@ -74,10 +83,11 @@ export async function broadcast (request) {
     }
   }
 
-  // TODO: Fetch the existing record from the DHT to check that the one we're trying to
-  // publish is newer.  This isn't a massive problem, as we've checked the signature, so
-  // someone can only overwrite their own records, and the DHT garbage collection will
-  // sort them out eventually anyway, but it might be a nice thing to add.
+  // We *could* fetch the existing record from the DHT to check that the one we're trying to
+  // publish is newer. But given that the '/broadcast' endpoint is private to w3name, and w3name
+  // will have already checked the sequence number against its own copy of the existing record,
+  // checking it again here is probably not worth it. Also the DHT garbage collection understands
+  // sequence numbers and so will sort them out eventually anyway.
 
   addToQueue(key, entry.value, record)
 
@@ -89,6 +99,8 @@ export async function broadcast (request) {
 
 /**
  * Basic page for the root URL.
+ * @param {import('http').ClientRequest} request
+ * @returns {Promise<InboundEndpointResponse>}
  */
 export function siteRoot () {
   return {
