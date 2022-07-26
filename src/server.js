@@ -1,3 +1,4 @@
+/* global process */
 import http from 'http'
 import { broadcast, siteRoot } from './inbound.js'
 
