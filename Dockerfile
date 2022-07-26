@@ -6,6 +6,6 @@ RUN mkdir -p /home/circleci/app
 WORKDIR /home/circleci/app
 COPY --chown=circleci:circleci package*.json ./
 COPY --chown=circleci:circleci src ./src
-EXPOSE 8080
+EXPOSE 8000
 RUN npm install
 CMD [ "npm", "start" ]
