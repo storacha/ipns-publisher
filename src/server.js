@@ -1,7 +1,8 @@
+/* global process */
 import http from 'http'
 import { broadcast, siteRoot } from './inbound.js'
 
-const port = parseInt(process.env.INBOUND_PORT || 8000, 10)
+const port = parseInt(process.env.INBOUND_PORT || 8080, 10)
 const routes = {
   '/': siteRoot,
   '/broadcast': authorizationRequired(broadcast)
