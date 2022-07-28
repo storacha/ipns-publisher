@@ -12,7 +12,7 @@ export const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 export const sleepTimer = 60_000
 
 const CONCURRENCY = 5
-const DHT_PUT_TIMEOUT = 60_000
+const DHT_PUT_TIMEOUT = 300_000
 const fmt = formatNumber()
 
 const log = debug('ipns-pub')
