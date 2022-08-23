@@ -32,7 +32,7 @@ export const queue = new PQueue({ concurrency: CONCURRENCY })
  * @param {string} b64record Base 64 encoded serialized IPNS record.
  * @returns {undefined}
  */
-export async function addToQueue (key, value, b64record) {
+export function addToQueue (key, value, b64record) {
   const keyLog = log.extend(shorten(key))
   keyLog.enabled = true
 
@@ -71,7 +71,7 @@ export async function addToQueue (key, value, b64record) {
       const data = taskData.get(key)
       if (!data) throw new Error('missing task data')
       taskData.delete(key)
-      publishRecord(key, data.value, data.b64record)
+      await publishRecord(key, data.value, data.b64record)
     } finally {
       runningTasks.delete(key)
     }
