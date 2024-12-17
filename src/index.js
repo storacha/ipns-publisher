@@ -16,7 +16,7 @@ log.debug = debug('ipns-pub-debug')
  */
 async function main () {
   log('ℹ️ Enable verbose logging with DEBUG=ipns-pub-debug*')
-  const endpoint = process.env.ENDPOINT || 'wss://api.web3.storage'
+  const endpoint = process.env.ENDPOINT || 'wss://name.web3.storage'
   const url = new URL('name/*/watch', endpoint)
 
   while (true) {
@@ -31,10 +31,9 @@ async function main () {
 
     try {
       await new Promise((resolve, reject) => {
-        conn.on('message', async msg => {
+        conn.on('message', msg => {
           const { key, value, record: b64Record } = JSON.parse(msg.utf8Data)
-
-          await addToQueue(key, value, b64Record)
+          addToQueue(key, value, b64Record)
         })
 
         conn.on('error', err => reject(err))

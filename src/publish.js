@@ -4,7 +4,7 @@ import debug from 'debug'
 import formatNumber from 'format-number'
 import PQueue from 'p-queue'
 import { shorten } from './utils/string.js'
-import { create as createIpfs } from 'ipfs-http-client'
+import { create as createIpfs } from 'kubo-rpc-client'
 
 export const ipfs = createIpfs()
 
@@ -30,7 +30,6 @@ export const queue = new PQueue({ concurrency: CONCURRENCY })
  * @param {string} key Public key of the record.
  * @param {string} value The `value` field of the record.
  * @param {string} b64record Base 64 encoded serialized IPNS record.
- * @returns {undefined}
  */
 export function addToQueue (key, value, b64record) {
   const keyLog = log.extend(shorten(key))
@@ -83,7 +82,7 @@ export function addToQueue (key, value, b64record) {
  * @param {string} key Public key of the record.
  * @param {string} value The `value` field of the record.
  * @param {string} b64record Base 64 encoded serialized IPNS record.
- * @returns {undefined}
+ * @returns {Promise<void>}
  */
 export async function publishRecord (key, value, b64record) {
   const keyLog = log.extend(shorten(key))
@@ -97,7 +96,7 @@ export async function publishRecord (key, value, b64record) {
     const controller = new AbortController()
     timeoutId = setTimeout(() => controller.abort(), DHT_PUT_TIMEOUT)
 
-    for await (const e of ipfs.dht.put(`/ipns/${key}`, recordUint8, { signal: controller.signal })) {
+    for await (const e of ipfs.routing.put(`/ipns/${key}`, recordUint8, { signal: controller.signal })) {
       logQueryEvent(log.debug.extend(shorten(key)), e)
     }
     keyLog(`✅ Published in ${fmt(Date.now() - start)}ms`)

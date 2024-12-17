@@ -1,4 +1,3 @@
-import { create as createIpfs } from 'ipfs-http-client'
 import { base36 } from 'multiformats/bases/base36'
 import { CID } from 'multiformats/cid'
 

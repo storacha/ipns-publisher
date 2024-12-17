@@ -7,7 +7,7 @@ import { beforeEach, afterEach } from 'mocha'
 
 describe('Handles publishing records', () => {
   it('should publish a record after it is queued', async () => {
-    const putSpy = sinon.replace(ipfs.dht, 'put', sinon.fake.returns([1, 2, 3]))
+    const putSpy = sinon.replace(ipfs.routing, 'put', sinon.fake.returns([1, 2, 3]))
     const record = new MockRecord()
     const key = record.pubKey
     const value = record.value
@@ -55,9 +55,9 @@ describe('Handles publishing records', () => {
       const key = record.pubKey
       const value = record.value
       const b64record = record.asB64()
-      const putSpy = sinon.replace(ipfs.dht, 'put', sinon.fake.returns([1, 2, 3]))
+      const putSpy = sinon.replace(ipfs.routing, 'put', sinon.fake.returns([1, 2, 3]))
       await publishRecord(key, value, b64record)
-      assert(putSpy.calledOnce, 'ipfs.put is called once')
+      assert(putSpy.calledOnce, 'ipfs.routing.put is called once')
     })
   })
 })

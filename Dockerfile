@@ -1,6 +1,6 @@
 # Dockerfile for running ipns-publisher service.
 # CircleCI just gives us a nice Node image; this isn't for CI.
-FROM cimg/node:16.14.2
+FROM cimg/node:22.12.0
 USER circleci
 RUN mkdir -p /home/circleci/app
 WORKDIR /home/circleci/app
