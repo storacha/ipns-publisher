@@ -25,7 +25,7 @@
   "dependencies": {
     "debug": "^4.3.3",
     "dotenv": "^15.0.0",
-    "format-number": "^3.0.0",
+    "humanize-duration": "^3.32.1",
     "ipns": "^1.0.1",
     "kubo": "^0.32.1",
     "kubo-rpc-client": "^5.0.2",

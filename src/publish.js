@@ -1,7 +1,7 @@
 /* global AbortController */
 import * as uint8arrays from 'uint8arrays'
 import debug from 'debug'
-import formatNumber from 'format-number'
+import fmt from 'humanize-duration'
 import PQueue from 'p-queue'
 import { shorten } from './utils/string.js'
 import { create as createIpfs } from 'kubo-rpc-client'
@@ -11,9 +11,8 @@ export const ipfs = createIpfs()
 export const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 export const sleepTimer = 60_000
 
-const CONCURRENCY = 10
+const CONCURRENCY = 20
 const DHT_PUT_TIMEOUT = 300_000
-const fmt = formatNumber()
 
 const log = debug('ipns-pub')
 log.enabled = true
@@ -45,7 +44,7 @@ export function addToQueue (key, value, b64record) {
   taskData.set(key, data)
 
   const start = Date.now()
-  keyLog(`➕ Adding to the queue, position: ${fmt(queue.size)}`)
+  keyLog(`➕ Adding to the queue, position: ${queue.size.toLocaleString()}`)
   queue.add(async function run () {
     // if this task is already running, lets not concurrently put
     // multiple versions for the same key!
@@ -58,12 +57,12 @@ export function addToQueue (key, value, b64record) {
 
       // Add back into queue
       taskData.set(key, data)
-      keyLog(`➕ Re-adding to the queue, position: ${fmt(queue.size)}`)
+      keyLog(`➕ Re-adding to the queue, position: ${queue.size.toLocaleString()}`)
       queue.add(run)
       return
     }
 
-    keyLog(`🏁 Starting publish (was queued for ${fmt(Date.now() - start)}ms)`)
+    keyLog(`🏁 Starting publish (was queued for ${fmt(Date.now() - start)})`)
     runningTasks.add(key)
 
     try {
@@ -99,9 +98,9 @@ export async function publishRecord (key, value, b64record) {
     for await (const e of ipfs.routing.put(`/ipns/${key}`, recordUint8, { signal: controller.signal })) {
       logQueryEvent(log.debug.extend(shorten(key)), e)
     }
-    keyLog(`✅ Published in ${fmt(Date.now() - start)}ms`)
+    keyLog(`✅ Published in ${fmt(Date.now() - start)}`)
   } catch (err) {
-    keyLog(`⚠️ Failed to put to DHT (took ${fmt(Date.now() - start)}ms)`, err)
+    keyLog(`⚠️ Failed to put to DHT (took ${fmt(Date.now() - start)})`, err)
   } finally {
     clearTimeout(timeoutId)
   }
