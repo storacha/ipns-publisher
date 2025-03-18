@@ -14,9 +14,9 @@ export const sleepTimer = 60_000
 const CONCURRENCY = 20
 const DHT_PUT_TIMEOUT = 300_000
 
-const log = debug('ipns-pub')
+const log = debug('ipns:pub')
 log.enabled = true
-log.debug = debug('ipns-pub-debug')
+log.debug = debug('ipns:pub:debug')
 
 /** @type {Map<string, { value: string, b64record: string }>} */
 const taskData = new Map()

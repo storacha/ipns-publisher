@@ -1,6 +1,10 @@
 /* global process */
 import http from 'http'
+import debug from 'debug'
 import { broadcast, siteRoot } from './inbound.js'
+
+const log = debug('ipns:server')
+log.enabled = true
 
 const port = parseInt(process.env.INBOUND_PORT || 8000, 10)
 const routes = {
@@ -86,7 +90,8 @@ async function router (request, response) {
   }
   response.writeHead(status, headers)
   response.end(json ? JSON.stringify(json) : html)
-  console.log(`[${status}] ${request.url}`)
+  log(`[${status}] ${request.url}`)
+  if (status !== 200) log(res)
 }
 
 const server = http.createServer(router)
