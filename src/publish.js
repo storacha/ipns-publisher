@@ -11,7 +11,7 @@ export const ipfs = createIpfs()
 export const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 export const sleepTimer = 60_000
 
-const CONCURRENCY = 5
+const CONCURRENCY = 10
 const DHT_PUT_TIMEOUT = 300_000
 const fmt = formatNumber()
 
@@ -19,7 +19,7 @@ const log = debug('ipns-pub')
 log.enabled = true
 log.debug = debug('ipns-pub-debug')
 
-/** @type {Map<string, { record: string }>} */
+/** @type {Map<string, { value: string, b64record: string }>} */
 const taskData = new Map()
 /** @type {Set<string>} */
 const runningTasks = new Set()
@@ -52,7 +52,7 @@ export function addToQueue (key, value, b64record) {
     if (runningTasks.has(key)) {
       keyLog('🏃 Already running! Re-queue in 60s...')
       await sleep(sleepTimer)
-      if (taskData.has(key) && taskData.get(key) !== data) {
+      if (taskData.has(key) && taskData.get(key).b64record !== data.b64record) {
         return keyLog('⏩ Skipping re-queue, a newer update has been queued already.')
       }
 
