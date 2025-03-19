@@ -96,5 +96,5 @@ async function router (request, response) {
 
 const server = http.createServer(router)
 server.listen(port, () => {
-  console.log(`Inbound server is running on ${port}`)
+  console.log(`Inbound server is running on http://127.0.0.1:${port}`)
 })

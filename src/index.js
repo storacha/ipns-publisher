@@ -15,7 +15,7 @@ log.debug = debug('ipns-pub-debug')
  * and publish those updates to the DHT.
  */
 async function main () {
-  log('ℹ️ Enable verbose logging with DEBUG=ipns-pub-debug*')
+  log('ℹ️ Enable verbose logging with DEBUG=ipns:pub:debug*')
   const endpoint = process.env.ENDPOINT || 'wss://name.web3.storage'
   const url = new URL('name/*/watch', endpoint)
 

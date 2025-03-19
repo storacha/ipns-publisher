@@ -95,36 +95,14 @@ export async function publishRecord (key, value, b64record) {
     const controller = new AbortController()
     timeoutId = setTimeout(() => controller.abort(), DHT_PUT_TIMEOUT)
 
+    const keyLogDebug = log.debug.extend(shorten(key))
     for await (const e of ipfs.routing.put(`/ipns/${key}`, recordUint8, { signal: controller.signal })) {
-      logQueryEvent(log.debug.extend(shorten(key)), e)
+      keyLogDebug(e)
     }
     keyLog(`✅ Published in ${fmt(Date.now() - start)}`)
   } catch (err) {
     keyLog(`⚠️ Failed to put to DHT (took ${fmt(Date.now() - start)})`, err)
   } finally {
     clearTimeout(timeoutId)
-  }
-}
-
-/**
- * @param {debug.Debugger} log
- * @param {import('ipfs-core-types/src/dht').QueryEvent} e
- */
-function logQueryEvent (log, e) {
-  switch (e.name) {
-    case 'VALUE':
-      log(`Type: ${e.name} From: ${e.from} Value: ${uint8arrays.toString(e.value, 'base64pad')}`)
-      break
-    case 'SENDING_QUERY':
-      log(`Type: ${e.name} To: ${e.to}`)
-      break
-    case 'PEER_RESPONSE':
-      log(`Type: ${e.name} From: ${e.from} Message: ${e.messageName} Closer: ${e.closer.length} Providers: ${e.providers.length}`)
-      break
-    case 'DIALING_PEER':
-      log(`Type: ${e.name} Peer: ${e.peer}`)
-      break
-    default:
-      log(`Type: ${e.name}`)
   }
 }
