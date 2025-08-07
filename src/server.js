@@ -6,7 +6,8 @@ import { broadcast, siteRoot } from './inbound.js'
 const log = debug('ipns:server')
 log.enabled = true
 
-const port = parseInt(process.env.INBOUND_PORT || 8000, 10)
+const port = parseInt(process.env.INBOUND_PORT || '8000', 10)
+/** @type {Record<string, import('./inbound.js').InboundHandler>} */
 const routes = {
   '/': siteRoot,
   '/broadcast': authorizationRequired(broadcast)
@@ -16,26 +17,25 @@ const routes = {
  * "Middleware" wrapper function for protecting an endpoint function by requiring
  * that a correct 'Authorization' header is present.
  * @param {function} handler
- * @returns {function}
+ * @returns {import('./inbound.js').InboundHandler}
  */
 function authorizationRequired (handler) {
-  function gatekeeper (request) {
+  return (request) => {
     const authHeader = request.headers.authorization
 
     if (!authHeader) {
       return {
         status: 401,
-        html: 'Authorization header missing'
+        json: { message: 'Authorization header missing' }
       }
     } else if (authHeader !== process.env.AUTH_SECRET) {
       return {
         status: 403,
-        html: 'Authorization header invalid'
+        json: { message: 'Authorization header invalid' }
       }
     }
     return handler(request)
   }
-  return gatekeeper
 }
 
 /** @type {import('./inbound.js').InboundEndpointResponse}  */
@@ -51,45 +51,43 @@ const response404 = {
 function response500 (error) {
   return {
     status: 500,
-    message: `Error: ${error.message}`
+    json: { message: `Error: ${error.message}` }
   }
 }
 
 /**
  * HTTP server entrypoint. This may be changed depending on how/where we run this.
- * @param {import('http').ClientRequest} request
- * @param {import('http').ClientResponse} response
+ * @type {import('http').RequestListener}
  */
 async function router (request, response) {
   /** @type {import('./inbound.js').InboundEndpointResponse|undefined}  */
   let res
   try {
-    const handler = routes[request.url]
+    const handler = routes[request.url || '']
     if (handler === undefined) {
       res = response404
     } else {
       res = await handler(request)
     }
-  } catch (error) {
-    console.error(`Error ${error}`)
+  } catch (/** @type {any} */ error) {
+    console.error(error)
     res = response500(error)
   }
 
-  const json = res.json
-  const html = res.html
-
-  const status = (json || html)
+  const status = ('json' in res && res.json) || ('html' in res && res.html)
     ? (res.status || 200)
     : 500
 
   const headers = res.headers || {}
-  if (json) {
-    headers['Content-type'] = 'application/json;charset=utf8'
+  if ('json' in res) {
+    headers['Content-Type'] = 'application/json;charset=utf8'
+    response.writeHead(status, headers)
+    response.end(JSON.stringify(res.json))
   } else {
-    headers['Content-type'] = 'text/html;charset=utf8'
+    headers['Content-Type'] = 'text/html;charset=utf8'
+    response.writeHead(status, headers)
+    response.end(res.html)
   }
-  response.writeHead(status, headers)
-  response.end(json ? JSON.stringify(json) : html)
   log(`[${status}] ${request.url}`)
   if (status !== 200) log(res)
 }

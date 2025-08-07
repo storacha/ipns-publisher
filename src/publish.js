@@ -1,4 +1,3 @@
-/* global AbortController */
 import * as uint8arrays from 'uint8arrays'
 import debug from 'debug'
 import fmt from 'humanize-duration'
@@ -8,6 +7,7 @@ import { create as createIpfs } from 'kubo-rpc-client'
 
 export const ipfs = createIpfs()
 
+/** @param {number} ms */
 export const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 export const sleepTimer = 60_000
 
@@ -16,12 +16,13 @@ const DHT_PUT_TIMEOUT = 300_000
 
 const log = debug('ipns:pub')
 log.enabled = true
-log.debug = debug('ipns:pub:debug')
+const debugLog = debug('ipns:pub:debug')
 
 /** @type {Map<string, { value: string, b64record: string }>} */
 const taskData = new Map()
 /** @type {Set<string>} */
 const runningTasks = new Set()
+/** @type {PQueue} */
 export const queue = new PQueue({ concurrency: CONCURRENCY })
 
 /**
@@ -51,7 +52,9 @@ export function addToQueue (key, value, b64record) {
     if (runningTasks.has(key)) {
       keyLog('🏃 Already running! Re-queue in 60s...')
       await sleep(sleepTimer)
-      if (taskData.has(key) && taskData.get(key).b64record !== data.b64record) {
+
+      const existingData = taskData.get(key)
+      if (existingData && existingData.b64record !== data.b64record) {
         return keyLog('⏩ Skipping re-queue, a newer update has been queued already.')
       }
 
@@ -95,7 +98,7 @@ export async function publishRecord (key, value, b64record) {
     const controller = new AbortController()
     timeoutId = setTimeout(() => controller.abort(), DHT_PUT_TIMEOUT)
 
-    const keyLogDebug = log.debug.extend(shorten(key))
+    const keyLogDebug = debugLog.extend(shorten(key))
     for await (const e of ipfs.routing.put(`/ipns/${key}`, recordUint8, { signal: controller.signal })) {
       keyLogDebug(e)
     }

@@ -1,6 +1,6 @@
 import * as ipns from 'ipns'
 import { validate as ipnsValidate } from 'ipns/validator'
-import { keys } from 'libp2p-crypto'
+import * as keys from '@libp2p/crypto/keys'
 import * as Digest from 'multiformats/hashes/digest'
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 import { parseAndValidateCID } from './utils/ipfs.js'
@@ -8,11 +8,8 @@ import { getBody } from './utils/http/requests.js'
 import { addToQueue } from './publish.js'
 
 /**
- * A number, or a string containing a number.
- * @typedef {object} InboundEndpointResponse
- * @property {number} status
- * @property {object|undefined} json
- * @property {string|undefined} html
+ * @typedef {{ status: number, headers?: Record<string, string> } & ({ json: any } | { html: string })} InboundEndpointResponse
+ * @typedef {(request: import('http').IncomingMessage) => Promise<InboundEndpointResponse>} InboundHandler
  */
 
 /**
@@ -20,7 +17,7 @@ import { addToQueue } from './publish.js'
  * Expects a JSON payload containing:
  *  - `key` - key of the record to be published.
  *  - `record` - base64-encoded record to be published.
- * @param {import('http').ClientRequest} request
+ * @param {import('http').IncomingMessage} request
  * @returns {Promise<InboundEndpointResponse>}
  */
 export async function broadcast (request) {
@@ -39,19 +36,21 @@ export async function broadcast (request) {
   let keyCid
   try {
     keyCid = parseAndValidateCID(key)
-  } catch (error) {
+  } catch (/** @type {any} */ error) {
     return {
       status: 400,
       json: { message: error.message }
     }
   }
 
+  const recordBytes = uint8ArrayFromString(record, 'base64pad')
+  /** @type {ipns.IPNSRecord|undefined} */
   let entry
   let pubKey
 
   try {
-    entry = ipns.unmarshal(uint8ArrayFromString(record, 'base64pad'))
-  } catch (error) {
+    entry = ipns.unmarshalIPNSRecord(recordBytes)
+  } catch (/** @type {any} */ error) {
     return {
       status: 400,
       json: { message: `Invalid record: ${error.message}` }
@@ -59,8 +58,8 @@ export async function broadcast (request) {
   }
 
   try {
-    pubKey = keys.unmarshalPublicKey(Digest.decode(keyCid.multihash.bytes).bytes)
-  } catch (error) {
+    pubKey = keys.publicKeyFromProtobuf(Digest.decode(keyCid.multihash.bytes).bytes)
+  } catch (/** @type {any} */ error) {
     return {
       status: 400,
       json: { message: `Invalid key: ${error.message}` }
@@ -68,15 +67,15 @@ export async function broadcast (request) {
   }
 
   try {
-    await ipnsValidate(pubKey, entry)
-  } catch (error) {
+    await ipnsValidate(pubKey, recordBytes)
+  } catch (/** @type {any} */ error) {
     return {
       status: 400,
       json: { message: `invalid ipns entry: ${error.message}` }
     }
   }
 
-  if (entry.pubKey !== undefined && !keys.unmarshalPublicKey(entry.pubKey).equals(pubKey)) {
+  if (entry.pubKey !== undefined && !keys.publicKeyFromProtobuf(entry.pubKey).equals(pubKey)) {
     return {
       status: 404,
       json: { message: 'embedded public key mismatch' }
@@ -99,10 +98,10 @@ export async function broadcast (request) {
 
 /**
  * Basic page for the root URL.
- * @param {import('http').ClientRequest} request
+ *
  * @returns {Promise<InboundEndpointResponse>}
  */
-export function siteRoot () {
+export async function siteRoot () {
   return {
     status: 200,
     html: `<body style="font-family: -apple-system, system-ui">

@@ -10,7 +10,7 @@
     "start:ipfs": "ipfs daemon --init --init-profile=server",
     "start:publisher": "node src/index.js",
     "start:inbound": "node src/server.js",
-    "test": "mocha --experimental-vm-modules --timeout 5000",
+    "test": "DEBUG=ipns* mocha --no-experimental-require-module --timeout 5000",
     "lint": "standard"
   },
   "keywords": [
@@ -23,22 +23,28 @@
   "author": "Alan Shaw",
   "license": "Apache-2.0 OR MIT",
   "dependencies": {
-    "debug": "^4.3.3",
-    "dotenv": "^15.0.0",
-    "humanize-duration": "^3.32.1",
-    "ipns": "^1.0.1",
-    "kubo": "^0.32.1",
-    "kubo-rpc-client": "^5.0.2",
-    "libp2p-crypto": "^0.21.2",
-    "npm-run-all": "^4.1.5",
-    "p-queue": "^7.2.0",
-    "uint8arrays": "^3.0.0",
-    "websocket": "^1.0.34"
+    "@libp2p/crypto": "^5.1.7",
+    "@libp2p/interface": "^2.10.5",
+    "debug": "^4.4.1",
+    "dotenv": "^17.2.1",
+    "humanize-duration": "^3.33.0",
+    "ipns": "^10.1.2",
+    "kubo": "^0.36.0",
+    "kubo-rpc-client": "^5.2.0",
+    "multiformats": "^13.4.0",
+    "p-queue": "^8.1.0",
+    "uint8arrays": "^5.1.0",
+    "websocket": "^1.0.35"
   },
   "devDependencies": {
-    "assert": "^2.0.0",
-    "mocha": "^10.0.0",
-    "sinon": "^14.0.0",
-    "standard": "^16.0.4"
+    "@types/debug": "^4.1.12",
+    "@types/humanize-duration": "^3.27.4",
+    "@types/sinon": "^17.0.4",
+    "@types/websocket": "^1.0.10",
+    "assert": "^2.1.0",
+    "mocha": "^11.7.1",
+    "sinon": "^21.0.0",
+    "standard": "^17.1.2",
+    "typescript": "^5.9.2"
   }
 }

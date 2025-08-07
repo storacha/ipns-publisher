@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist",
+    "allowJs": true,
+    "checkJs": true,
+    "esModuleInterop": true,
+    "moduleResolution": "Node16",
+
+    // Type Checking
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": false,
+    "strict": true,
+
+    // Interop Constraints
+    "forceConsistentCasingInFileNames": true,
+
+    // Completeness
+    "skipLibCheck": true,
+  },
+  "include": [
+    "src/**/*"
+  ]
+}

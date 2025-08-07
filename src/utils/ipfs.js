@@ -13,7 +13,7 @@ function validateCIDKeyCode (cid) {
 }
 
 /**
- * @param {string} cid
+ * @param {string} key
  */
 export function parseAndValidateCID (key) {
   let cid

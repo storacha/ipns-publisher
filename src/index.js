@@ -1,14 +1,13 @@
 import websocket from 'websocket'
 import dotenv from 'dotenv'
 import debug from 'debug'
-import { addToQueue } from './publish.js'
+import { addToQueue, sleep } from './publish.js'
 
 dotenv.config()
 
 const WebSocket = websocket.client
 const log = debug('ipns-pub')
 log.enabled = true
-log.debug = debug('ipns-pub-debug')
 
 /**
  * Listen to the websocket on the w3name service to receive updates to IPNS name records
@@ -32,8 +31,9 @@ async function main () {
     try {
       await new Promise((resolve, reject) => {
         conn.on('message', msg => {
+          if (msg.type !== 'utf8') return log('received binary message')
           const { key, value, record: b64Record } = JSON.parse(msg.utf8Data)
-          addToQueue(key, value, b64Record)
+          addToQueue(key, value, b64Record) 
         })
 
         conn.on('error', err => reject(err))
@@ -50,7 +50,5 @@ async function main () {
     await sleep(60_000)
   }
 }
-
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 
 main()
