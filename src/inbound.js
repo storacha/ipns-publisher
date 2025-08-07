@@ -53,7 +53,7 @@ export async function broadcast (request) {
   } catch (/** @type {any} */ error) {
     return {
       status: 400,
-      json: { message: `Invalid record: ${error.message}` }
+      json: { message: `Invalid record: ${error.message}`, record }
     }
   }
 
@@ -62,7 +62,7 @@ export async function broadcast (request) {
   } catch (/** @type {any} */ error) {
     return {
       status: 400,
-      json: { message: `Invalid key: ${error.message}` }
+      json: { message: `Invalid key: ${error.message}`, key }
     }
   }
 
@@ -71,7 +71,7 @@ export async function broadcast (request) {
   } catch (/** @type {any} */ error) {
     return {
       status: 400,
-      json: { message: `invalid ipns entry: ${error.message}` }
+      json: { message: `invalid ipns entry: ${error.message}`, key, record }
     }
   }
 
